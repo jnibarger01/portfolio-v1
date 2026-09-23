@@ -64,8 +64,7 @@ const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(34, innerWidth / innerHeight, 0.5, 1400);
 let composer = null, bloom = null;
 if (quality.bloom) {
-  const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
-  composer = new EffectComposer(renderer, rt);
+  composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
   bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.35, 0.5, 0.86);
   composer.addPass(bloom);
