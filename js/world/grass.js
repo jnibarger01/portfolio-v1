@@ -1,4 +1,4 @@
-import * as THREE from '/vendor/three/three.module.min.js';
+import * as THREE from '../../vendor/three/three.module.min.js';
 import { WORLD, rng } from '../layout.js';
 import { GRID_N } from './ground.js';
 

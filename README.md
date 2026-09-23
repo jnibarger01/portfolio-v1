@@ -22,6 +22,10 @@ PORT=8080 node server.mjs
 npm test
 ```
 
+## GitHub Pages
+
+`npm run build:pages` creates the static `dist/` site for the `portfolio-v1` project page. The Pages build serves the interactive portfolio and 4Runner from the repository path. Whispers and lap times are saved in each visitor's browser on Pages; the Node server version keeps its server-backed API and shared persistence.
+
 ## Controls
 
 - WASD / arrows: drive
@@ -52,7 +56,7 @@ Visitor-radio writes are validated, length-limited, rate-limited, and retained a
 
 ## Design note
 
-This project borrows the broad interaction concept of a vehicle-driven portfolio, but does not copy Bruno Simon's source, 3D assets, personal copy, project data, or branded world. The implementation is dependency-free Canvas 2D with original isometric rendering and Jace-specific project structures.
+This project borrows the broad interaction concept of a vehicle-driven portfolio, but does not copy Bruno Simon's source, 3D assets, personal copy, project data, or branded world. It uses an original Three.js world and Jace-specific project structures.
 
 ## Vehicle
 

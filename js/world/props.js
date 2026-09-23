@@ -1,4 +1,4 @@
-import * as THREE from '/vendor/three/three.module.min.js';
+import * as THREE from '../../vendor/three/three.module.min.js';
 import { WORLD, SPOKES, PORTALS, CAREER, CONTACT, CHECKPOINTS, RAMPS, DOCK, WHISPER_STATION, LAKE, polar, rng } from '../layout.js';
 import { sampleHeight } from './ground.js';
 import { box, cyl, mat, glow, canvasTexture, signTexture, FONT_DISPLAY, FONT_BODY } from './kit.js';

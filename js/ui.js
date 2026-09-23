@@ -1,6 +1,7 @@
 import { projectArticle, projectListHtml, careerArticle, contactArticle, esc } from './templates.js';
 import { ACHIEVEMENTS } from './achievements.js';
 import { WORLD, LAKE, SPOKES, PORTALS, CAREER, CHECKPOINTS, DOCK, lakeRadiusAt } from './layout.js';
+import { appRoute, loadCircuit, routePath } from './platform.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -24,7 +25,7 @@ export function createUI(app) {
     modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true');
     if (modal === menu) $('menuTrigger').setAttribute('aria-expanded', 'false');
     if (restore) {
-      if (!isOpen()) { app.onModal?.(false); if (location.pathname !== '/') { history.pushState({}, '', '/'); app.onRoute?.(null); } }
+      if (!isOpen()) { app.onModal?.(false); if (appRoute() !== '/') { history.pushState({}, '', routePath()); app.onRoute?.(null); } }
       lastFocus?.focus?.({ preventScroll: true });
     }
   }
@@ -45,7 +46,7 @@ export function createUI(app) {
 
   // ---------- menu + tabs ----------
   const tabs = [...menu.querySelectorAll('[role=tab]')];
-  const previews = { home: '/social-preview.svg' };
+  const previews = { home: routePath('social-preview.svg') };
   function selectTab(name) {
     activeTab = name;
     for (const t of tabs) t.setAttribute('aria-selected', String(t.dataset.tab === name));
@@ -56,7 +57,7 @@ export function createUI(app) {
     if (name === 'projects') renderProjects();
     menu.querySelector('.modal-content').scrollTop = 0;
   }
-  tabs.forEach((t) => t.addEventListener('click', () => { selectTab(t.dataset.tab); app.audio.click(); if (t.dataset.tab === 'home') history.replaceState({}, '', '/about'); else if (t.dataset.tab === 'projects') history.replaceState({}, '', '/projects'); }));
+  tabs.forEach((t) => t.addEventListener('click', () => { selectTab(t.dataset.tab); app.audio.click(); if (t.dataset.tab === 'home') history.replaceState({}, '', routePath('about')); else if (t.dataset.tab === 'projects') history.replaceState({}, '', routePath('projects')); }));
   function openMenu(tab = activeTab) {
     const snap = app.snapshot(); if (snap) $('menuPreview').src = snap;
     selectTab(tab); open(menu);
@@ -73,7 +74,7 @@ export function createUI(app) {
     const snap = app.snapshot(); if (snap) $('detailPreview').src = snap;
     $('detailPreview').alt = `${p.name} in the Jace Drive world`;
     open(detail);
-    if (push && location.pathname !== `/project/${p.slug}`) history.pushState({ slug: p.slug }, '', `/project/${p.slug}`);
+    if (push && appRoute() !== `/project/${p.slug}`) history.pushState({ slug: p.slug }, '', routePath(`project/${p.slug}`));
     setMeta(`${p.name} · ${p.tagline} | Jace Nibarger`, p.description);
   }
   function openInfo(kind, data) {
@@ -135,7 +136,7 @@ export function createUI(app) {
     $('bestLap').textContent = app.bestLap ? fmt(app.bestLap) : 'none yet';
     const list = $('leaderboard');
     try {
-      const r = await fetch('/api/circuit'); const rows = await r.json();
+      const rows = await loadCircuit();
       list.innerHTML = rows.length ? rows.map((x) => `<li>${esc(x.name)} <b>${fmt(x.ms)}</b></li>`).join('') : '<li class="muted">No laps yet. Set the first time.</li>';
     } catch { list.innerHTML = '<li class="muted">Leaderboard offline.</li>'; }
   }

@@ -1,4 +1,4 @@
-import * as THREE from '/vendor/three/three.module.min.js';
+import * as THREE from '../../vendor/three/three.module.min.js';
 import { box, cyl, cone, mat, glow, labelSprite, signTexture, canvasTexture, FONT_DISPLAY } from './kit.js';
 import { sampleHeight } from './ground.js';
 

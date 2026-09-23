@@ -1,8 +1,9 @@
-import * as THREE from '/vendor/three/three.module.min.js';
-import { EffectComposer } from '/vendor/three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from '/vendor/three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from '/vendor/three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from '/vendor/three/addons/postprocessing/OutputPass.js';
+import * as THREE from '../vendor/three/three.module.min.js';
+import { EffectComposer } from '../vendor/three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from '../vendor/three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from '../vendor/three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from '../vendor/three/addons/postprocessing/OutputPass.js';
+import { appRoute, loadProjects, loadWhispers, saveWhisper, saveCircuit } from './platform.js';
 import { WORLD, PORTALS, CHECKPOINTS, CAREER, DOCK, setProjects, surfaceAt } from './layout.js';
 import { buildHeights, paintGround, paintGrassMask, buildTerrain, heightTexture, surfaceHeight, sampleHeight } from './world/ground.js';
 import { createGrass } from './world/grass.js';
@@ -131,7 +132,7 @@ boot().catch((err) => {
 async function boot() {
   ui.setLoading(0.05, 'Fetching Jace\'s projects…');
   const [projects] = await Promise.all([
-    fetch('/api/projects').then((r) => { if (!r.ok) throw new Error('Project API unavailable'); return r.json(); }),
+    loadProjects(),
     Promise.race([document.fonts.load("700 40px 'Amatic SC'").then(() => document.fonts.load("800 20px 'Nunito'")), wait(2500)])
   ]);
   setProjects(projects);
@@ -188,19 +189,21 @@ function start() {
   unlock('engine');
   canvas.setAttribute('tabindex', '0'); canvas.focus?.();
   // deep links: /project/:slug, /about, /projects
-  const m = location.pathname.match(/^\/project\/([^/]+)/);
+  const route = appRoute();
+  const m = route.match(/^\/project\/([^/]+)/);
   const p = m && PORTALS.find((x) => x.slug === m[1]);
   if (p) { app.travelTo(p, { silent: true }); openPortal(p, { push: false }); }
-  else if (location.pathname === '/about') ui.openMenu('home');
-  else if (location.pathname === '/projects') ui.openMenu('projects');
+  else if (route === '/about') ui.openMenu('home');
+  else if (route === '/projects') ui.openMenu('projects');
 }
 
 addEventListener('popstate', () => {
-  const m = location.pathname.match(/^\/project\/([^/]+)/);
+  const route = appRoute();
+  const m = route.match(/^\/project\/([^/]+)/);
   const p = m && PORTALS.find((x) => x.slug === m[1]);
   if (p) openPortal(p, { push: false });
-  else if (location.pathname === '/about') ui.openMenu('home');
-  else if (location.pathname === '/projects') ui.openMenu('projects');
+  else if (route === '/about') ui.openMenu('home');
+  else if (route === '/projects') ui.openMenu('projects');
   else ui.closeAll();
 });
 
@@ -366,13 +369,12 @@ function resetObjects() {
 // ---------------- Whispers (server-backed, placed in the world) ----------------
 let whispers = [];
 async function fetchWhispers() {
-  try { const r = await fetch('/api/whispers'); whispers = await r.json(); whisperLanterns.sync(whispers); } catch { /* offline */ }
+  try { whispers = await loadWhispers(); whisperLanterns.sync(whispers); } catch { /* offline */ }
   return whispers;
 }
 async function postWhisper(name, message) {
   const s = vehicle.state;
-  const r = await fetch('/api/whispers', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, message, x: +s.x.toFixed(1), z: +s.z.toFixed(1) }) });
-  const data = await r.json(); if (!r.ok) throw new Error(data.error || 'Transmission failed');
+  const data = await saveWhisper({ name, message, x: +s.x.toFixed(1), z: +s.z.toFixed(1) });
   whispers.push(data); whisperLanterns.sync(whispers); unlock('radio');
   return data;
 }
@@ -437,7 +439,7 @@ function updateCircuit(now) {
 async function submitLap(ms) {
   const name = localStorage.getItem('jace-drive-name') || prompt('Nice lap! Name for the leaderboard?', '') || 'Anonymous driver';
   localStorage.setItem('jace-drive-name', name);
-  try { await fetch('/api/circuit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name, ms: Math.round(ms) }) }); } catch { /* offline */ }
+  try { await saveCircuit(name, ms); } catch { /* unavailable */ }
 }
 
 // ---------------- Letters physics ----------------

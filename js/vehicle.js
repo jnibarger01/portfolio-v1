@@ -1,13 +1,13 @@
-import * as THREE from '/vendor/three/three.module.min.js';
-import { GLTFLoader } from '/vendor/three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from '/vendor/three/addons/loaders/DRACOLoader.js';
+import * as THREE from '../vendor/three/three.module.min.js';
+import { GLTFLoader } from '../vendor/three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from '../vendor/three/addons/loaders/DRACOLoader.js';
 import { WORLD } from './layout.js';
 import { box, cyl, mat } from './world/kit.js';
 
 // Jace's exact Toyota Showroom 2024 4Runner TRD Pro (self-hosted copy of his own asset)
-export const MODEL_URL = '/assets/models/modsnation_7416_assets_assembled.glb';
-export const WHEEL_URL = '/assets/models/wheel_trd_pro.glb';
-export const TIRE_URL = '/assets/models/ModsNation_7416_tire.glb';
+export const MODEL_URL = new URL('../assets/models/modsnation_7416_assets_assembled.glb', import.meta.url).href;
+export const WHEEL_URL = new URL('../assets/models/wheel_trd_pro.glb', import.meta.url).href;
+export const TIRE_URL = new URL('../assets/models/ModsNation_7416_tire.glb', import.meta.url).href;
 export const VEHICLE_LABEL = '2024 Toyota 4Runner TRD Pro';
 const TIRE_SCALE = 1.45;
 
@@ -38,7 +38,7 @@ export function createVehicle(scene, { onProgress } = {}) {
   for (const x of [-0.62, 0.62]) { const s = new THREE.Sprite(flareMat); s.position.set(x, 0.95, 2.42); s.scale.setScalar(1.3); body.add(s); }
 
   const draco = new DRACOLoader();
-  draco.setDecoderPath('/vendor/three/addons/libs/draco/');
+  draco.setDecoderPath(new URL('../vendor/three/addons/libs/draco/', import.meta.url).href);
   const loader = new GLTFLoader(); loader.setDRACOLoader(draco);
 
   const onLoad = (gltf, wheelGltf, tireGltf) => {

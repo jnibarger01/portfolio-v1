@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "test": "node tests.mjs"
+    "test": "node tests.mjs",
+    "build:pages": "node scripts/build-pages.mjs",
+    "test:pages": "npm run build:pages && node tests-pages.mjs"
   },
   "engines": { "node": ">=20" }
 }

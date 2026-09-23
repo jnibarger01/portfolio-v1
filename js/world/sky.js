@@ -1,4 +1,4 @@
-import * as THREE from '/vendor/three/three.module.min.js';
+import * as THREE from '../../vendor/three/three.module.min.js';
 import { rng } from '../layout.js';
 
 // Keyframes over a day (t: 0 = midnight, .5 = noon)
