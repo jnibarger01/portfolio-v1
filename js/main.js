@@ -1,8 +1,8 @@
-import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import * as THREE from '/vendor/three/three.module.min.js';
+import { EffectComposer } from '/vendor/three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from '/vendor/three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from '/vendor/three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from '/vendor/three/addons/postprocessing/OutputPass.js';
 import { WORLD, PORTALS, CHECKPOINTS, CAREER, DOCK, setProjects, surfaceAt } from './layout.js';
 import { buildHeights, paintGround, paintGrassMask, buildTerrain, heightTexture, surfaceHeight, sampleHeight } from './world/ground.js';
 import { createGrass } from './world/grass.js';
@@ -19,7 +19,7 @@ import { ACHIEVEMENTS } from './achievements.js';
 
 // ---------------- Settings & quality ----------------
 const QUALITY = {
-  low: { dpr: 1, grassCount: 24000, grassPatch: 44, grassHeight: 0.62, shadows: true, shadowMap: 1024, bloom: false, treeCount: 95, pineCount: 200, bushCount: 90, leafDensity: 0.55, flowerCount: 160, anisotropy: 2 },
+  low: { dpr: 1, grassCount: 7000, grassPatch: 44, grassHeight: 0.62, shadows: true, shadowMap: 1024, bloom: false, treeCount: 45, pineCount: 90, bushCount: 40, leafDensity: 0.55, flowerCount: 70, anisotropy: 2 },
   medium: { dpr: 1.5, grassCount: 65000, grassPatch: 58, grassHeight: 0.7, shadows: true, shadowMap: 2048, bloom: true, treeCount: 125, pineCount: 280, bushCount: 140, leafDensity: 0.8, flowerCount: 260, anisotropy: 4 },
   high: { dpr: 2, grassCount: 120000, grassPatch: 72, grassHeight: 0.74, shadows: true, shadowMap: 2048, bloom: true, treeCount: 150, pineCount: 340, bushCount: 180, leafDensity: 1, flowerCount: 340, anisotropy: 8 }
 };
@@ -167,12 +167,11 @@ async function boot() {
   for (const l of letters.letters) l.g.position.y = sampleHeight(l.home.x, l.home.z);
   colliders = [...foliage.colliders, ...portals.colliders, ...props.colliders];
   particles = createParticles(); scene.add(particles.points);
-  whisperLanterns.init();
-
   ui.setLoading(0.84, 'Rolling the 4Runner out of the showroom…'); await frame();
   vehicle = createVehicle(scene, { onProgress: (p) => ui.setLoading(0.84 + p * 0.14) });
   respawn(true);
   await Promise.race([new Promise((r) => { addEventListener('jace-4runner-ready', r, { once: true }); addEventListener('jace-4runner-fallback', r, { once: true }); }), wait(20000)]);
+  whisperLanterns.init();
 
   // warm up shaders so the first frames don't hitch
   sky.apply(new THREE.Vector3());
@@ -187,7 +186,7 @@ function start() {
   started = true; paused = false;
   audio.init(); audio.honk();
   unlock('engine');
-  canvas.focus?.();
+  canvas.setAttribute('tabindex', '0'); canvas.focus?.();
   // deep links: /project/:slug, /about, /projects
   const m = location.pathname.match(/^\/project\/([^/]+)/);
   const p = m && PORTALS.find((x) => x.slug === m[1]);
@@ -195,6 +194,7 @@ function start() {
   else if (location.pathname === '/about') ui.openMenu('home');
   else if (location.pathname === '/projects') ui.openMenu('projects');
 }
+
 addEventListener('popstate', () => {
   const m = location.pathname.match(/^\/project\/([^/]+)/);
   const p = m && PORTALS.find((x) => x.slug === m[1]);
@@ -208,14 +208,17 @@ addEventListener('popstate', () => {
 const keys = new Set();
 const touch = { active: false, x: 0, y: 0 };
 const pressed = (...k) => k.some((x) => keys.has(x));
+const isGameKey = (k) => ['w','a','s','d','q','z','arrowup','arrowdown','arrowleft','arrowright','shift','b','control',' ','enter','m','r','h','l','t'].includes(k);
+const menuFocused = () => document.getElementById('introStart') === document.activeElement;
 addEventListener('keydown', (e) => {
   if (e.target.closest?.('input, textarea')) { if (e.key === 'Escape') e.target.blur(); return; }
   const k = e.key.toLowerCase();
   if (k === 'escape') { if (ui.isOpen()) ui.closeAll(); else ui.openMenu(); return; }
-  if (!started) return;
+  if (!started && !ui.isOpen() && !menuFocused()) return;
+  if (started && !ui.isOpen() && isGameKey(k) && document.activeElement !== canvas) canvas.focus?.();
   if (ui.isOpen()) { if (k === 'm') ui.closeAll(); return; }
+  if (isGameKey(k)) e.preventDefault();
   keys.add(k);
-  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
   if (e.repeat) return;
   if (k === 'enter') interact();
   else if (k === 'm') ui.openMap();
@@ -301,7 +304,7 @@ function readInput() {
     padPrev.a = a; padPrev.y = y;
     if (Math.abs(pad.axes[2] || 0) > 0.2) cam.yaw -= pad.axes[2] * 0.03;
   }
-  if (modalOpen || paused) return { throttle: 0, steer: 0, boost: false, brake: true };
+  if ((modalOpen && !menuFocused()) || (paused && !menuFocused())) return { throttle: 0, steer: 0, boost: false, brake: true };
   return { throttle, steer, boost, brake };
 }
 const padPrev = { a: false, y: false };

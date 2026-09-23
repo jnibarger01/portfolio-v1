@@ -45,7 +45,7 @@ export function createUI(app) {
 
   // ---------- menu + tabs ----------
   const tabs = [...menu.querySelectorAll('[role=tab]')];
-  const previews = { home: '/assets/social-preview.png' };
+  const previews = { home: '/social-preview.svg' };
   function selectTab(name) {
     activeTab = name;
     for (const t of tabs) t.setAttribute('aria-selected', String(t.dataset.tab === name));

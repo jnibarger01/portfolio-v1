@@ -1,13 +1,15 @@
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import * as THREE from '/vendor/three/three.module.min.js';
+import { GLTFLoader } from '/vendor/three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from '/vendor/three/addons/loaders/DRACOLoader.js';
 import { WORLD } from './layout.js';
 import { box, cyl, mat } from './world/kit.js';
 
 // Jace's exact Toyota Showroom 2024 4Runner TRD Pro (self-hosted copy of his own asset)
 export const MODEL_URL = '/assets/models/modsnation_7416_assets_assembled.glb';
-export const MODEL_FALLBACK_URL = 'https://raw.githubusercontent.com/jnibarger01/toyota-showroom/main/public/models/modsnation_7416_assets_assembled.glb';
+export const WHEEL_URL = '/assets/models/wheel_trd_pro.glb';
+export const TIRE_URL = '/assets/models/ModsNation_7416_tire.glb';
 export const VEHICLE_LABEL = '2024 Toyota 4Runner TRD Pro';
+const TIRE_SCALE = 1.45;
 
 const G = 22;             // gravity (a touch floaty, like a toy)
 const WHEELBASE = 2.81;
@@ -21,7 +23,7 @@ export function createVehicle(scene, { onProgress } = {}) {
   const state = {
     x: 0, y: 0, z: 0, yaw: Math.PI * 1.25, speed: 0, vy: 0, grounded: true, steer: 0,
     pitch: 0, roll: 0, suspension: 0, suspV: 0, spin: 0, boost: false, braking: false, inWater: 0,
-    ready: false, fallback: false
+    ready: false, fallback: false, runningGearReady: false
   };
 
   const wheels = { spin: [], steer: [] };
@@ -39,7 +41,7 @@ export function createVehicle(scene, { onProgress } = {}) {
   draco.setDecoderPath('/vendor/three/addons/libs/draco/');
   const loader = new GLTFLoader(); loader.setDRACOLoader(draco);
 
-  const onLoad = (gltf) => {
+  const onLoad = (gltf, wheelGltf, tireGltf) => {
     const model = gltf.scene;
     model.traverse((o) => {
       if (!o.isMesh) return;
@@ -52,25 +54,50 @@ export function createVehicle(scene, { onProgress } = {}) {
     });
     for (const side of ['front_left', 'front_right', 'rear_left', 'rear_right']) {
       const front = side.startsWith('front');
-      for (const prefix of ['PLACED_KO3_', 'PLACED_WEISU_']) {
-        const n = model.getObjectByName(prefix + side);
-        if (n) { n.rotation.order = 'YXZ'; wheels.spin.push(n); if (front) wheels.steer.push(n); }
-      }
+      const mountName = `MOUNT_WHEEL_${side.toUpperCase()}`;
+      const mount = model.getObjectByName(mountName);
+      const oldTire = model.getObjectByName(`PLACED_KO3_${side}`);
+      const oldWheel = model.getObjectByName(`PLACED_WEISU_${side}`);
+      if (!mount || !oldTire || !oldWheel) throw new Error(`4Runner wheel mount is incomplete: ${side}`);
+
+      // Replace the assembled model's undersized KO3 and aftermarket WEISU meshes with the
+      // supplied TRD Pro rim and correctly scaled KO3 tire at the authored wheel mount.
+      oldTire.parent?.remove(oldTire);
+      oldWheel.parent?.remove(oldWheel);
+      const pivot = new THREE.Group();
+      pivot.name = `TRD_PRO_WHEEL_PIVOT_${side}`;
+      pivot.rotation.order = 'YXZ';
+      const wheel = wheelGltf.scene.clone(true);
+      wheel.name = `TRD_PRO_WHEEL_${side}`;
+      const tire = tireGltf.scene.clone(true);
+      tire.name = `KO3_TIRE_${side}`;
+      tire.scale.setScalar(TIRE_SCALE);
+      for (const part of [wheel, tire]) part.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      pivot.add(tire, wheel);
+      mount.add(pivot);
+
+      wheels.spin.push(pivot);
+      if (front) wheels.steer.push(pivot);
       const cal = model.getObjectByName('PLACED_AOOA_caliper_' + side);
       if (cal && front) { cal.rotation.order = 'YXZ'; wheels.steer.push(cal); }
     }
     body.add(model);
+    state.runningGearReady = true;
     state.ready = true;
     window.dispatchEvent(new CustomEvent('jace-4runner-ready'));
   };
-  const onError = (err, triedFallback) => {
-    if (!triedFallback) { loader.load(MODEL_FALLBACK_URL, onLoad, undefined, (e) => onError(e, true)); return; }
+  const onError = (err) => {
     console.warn('4Runner model unavailable, using built-in stand-in.', err);
     buildStandIn(body, wheels);
     state.ready = true; state.fallback = true;
     window.dispatchEvent(new CustomEvent('jace-4runner-fallback'));
   };
-  loader.load(MODEL_URL, onLoad, (e) => onProgress?.(e.total ? e.loaded / e.total : 0), (e) => onError(e, false));
+  loader.load(MODEL_URL, (gltf) => {
+    onProgress?.(0.92);
+    Promise.all([loader.loadAsync(WHEEL_URL), loader.loadAsync(TIRE_URL)]).then(([wheelGltf, tireGltf]) => {
+      try { onLoad(gltf, wheelGltf, tireGltf); } catch (err) { onError(err); }
+    }).catch(onError);
+  }, (e) => onProgress?.((e.total ? e.loaded / e.total : 0) * 0.92), onError);
 
   const tmpN = new THREE.Vector3();
 
