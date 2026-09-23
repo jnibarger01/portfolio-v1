@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from '/vendor/three/three.module.min.js';
 
 const mats = new Map();
 export function mat(color, opts = {}) {

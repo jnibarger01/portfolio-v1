@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from '/vendor/three/three.module.min.js';
 import { WORLD, LAKE, DOCK, PORTALS, SPOKES, CHECKPOINTS, CAREER, RAMPS, heightAt, lakeRadiusAt, fbm, noise, noise2, polar, rng, rampHeight, deckHeight } from '../layout.js';
 
 const N = 257;                // height grid resolution (shared by mesh, physics, grass)

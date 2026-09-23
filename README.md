@@ -56,4 +56,4 @@ This project borrows the broad interaction concept of a vehicle-driven portfolio
 
 ## Vehicle
 
-The playable car is Jace's exact Toyota Showroom **2024 Toyota 4Runner TRD Pro** model (`modsnation_7416_assets_assembled.glb`). The app loads that owned GLB from the `jnibarger01/toyota-showroom` repository and renders it with Three.js + Draco. If the remote model or CDN is unavailable, the game fails soft to a lightweight 4Runner-shaped fallback so navigation still works.
+The playable car is Jace's exact Toyota Showroom **2024 Toyota 4Runner TRD Pro** model (`modsnation_7416_assets_assembled.glb`), served locally with the app. The aftermarket rims and undersized baked-in tires are replaced at the model's four authored mounts with the supplied TRD Pro wheel and BFGoodrich KO3 tire assets; front wheels steer and all four assemblies spin. Three.js, its GLTF/Draco loaders, postprocessing, and Draco decoder are self-hosted so boot does not depend on a CDN or a remote model fallback. If any local vehicle asset cannot be decoded, the game reports that failure and displays its lightweight 4Runner-shaped fallback.

@@ -1,5 +1,5 @@
-import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import * as THREE from '/vendor/three/three.module.min.js';
+import { mergeGeometries } from '/vendor/three/addons/utils/BufferGeometryUtils.js';
 import { WORLD, LAKE, PORTALS, CAREER, CONTACT, RAMPS, CHECKPOINTS, DOCK, roadDistance, lakeRadiusAt, rng, noise } from '../layout.js';
 import { sampleHeight } from './ground.js';
 
