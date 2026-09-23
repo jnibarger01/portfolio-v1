@@ -1,0 +1,20 @@
+export const ACHIEVEMENTS = [
+  { id: 'engine', title: 'Engine on', text: 'Start the 4Runner' },
+  { id: 'portal-first', title: 'First portal', text: 'Open any project portal' },
+  { id: 'portal-five', title: 'Window shopping', text: 'Discover 5 portals' },
+  { id: 'portal-all', title: 'Full-stack explorer', text: 'Discover every portal' },
+  { id: 'github', title: 'Through the portal', text: 'Open a GitHub repo from the world' },
+  { id: 'career', title: 'Read the résumé', text: 'Visit every career billboard' },
+  { id: 'contact', title: 'Say hello', text: 'Drive up to a contact kiosk' },
+  { id: 'jump', title: 'Air time', text: 'Jump' },
+  { id: 'big-air', title: 'Big air', text: 'Stay airborne for a full second' },
+  { id: 'boost', title: 'Full send', text: 'Hit 60 mph' },
+  { id: 'letters', title: "Don't break anything", text: "Knock over Jace's name" },
+  { id: 'lake', title: 'Wading depth', text: 'Drive into the lake' },
+  { id: 'map', title: 'Cartographer', text: 'Open the map' },
+  { id: 'radio', title: 'On the air', text: 'Post a whisper' },
+  { id: 'circuit', title: 'Lap of honor', text: 'Complete the ring circuit' },
+  { id: 'night', title: 'Night driver', text: 'Drive after dark' },
+  { id: 'honk', title: 'Beep beep', text: 'Honk the horn' },
+  { id: 'road-trip', title: 'Road trip', text: 'Drive 3 km in total' }
+];

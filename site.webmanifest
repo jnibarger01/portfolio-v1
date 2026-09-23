@@ -1,0 +1,9 @@
+{
+  "name": "Jace Drive Portfolio",
+  "short_name": "Jace Drive",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ef8844",
+  "theme_color": "#ef8844",
+  "icons": [{"src":"/favicon.svg","sizes":"any","type":"image/svg+xml"}]
+}

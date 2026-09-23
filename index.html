@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#1d1721" />
+  <title>{{TITLE}}</title>
+  <meta name="description" content="{{DESCRIPTION}}" />
+  <meta name="author" content="Jace Nibarger" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <link rel="canonical" href="{{CANONICAL}}" />
+  <meta property="og:type" content="{{OG_TYPE}}" />
+  <meta property="og:site_name" content="Jace Drive" />
+  <meta property="og:url" content="{{CANONICAL}}" />
+  <meta property="og:title" content="{{TITLE}}" />
+  <meta property="og:description" content="{{DESCRIPTION}}" />
+  <meta property="og:image" content="{{ORIGIN}}/assets/social-preview.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{TITLE}}" />
+  <meta name="twitter:description" content="{{DESCRIPTION}}" />
+  <meta name="twitter:image" content="{{ORIGIN}}/assets/social-preview.png" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="preload" href="/assets/fonts/amatic-sc-700-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/assets/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="modulepreload" href="/vendor/three/three.module.min.js" />
+  <link rel="stylesheet" href="/styles.css" />
+  <script type="importmap">{{IMPORTMAP}}</script>
+  <script type="application/ld+json">{{JSONLD}}</script>
+</head>
+<body data-route="{{ROUTE}}">
+  <a class="skip-link" href="#menu">Skip the game and read about Jace</a>
+
+  <div class="game" id="game">
+    <canvas id="world" aria-label="3D world: drive a Toyota 4Runner between Jace Nibarger's projects"></canvas>
+
+    <!-- Intro / loader -->
+    <div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle">
+      <div class="intro-inner">
+        <p class="intro-kicker">Jace Nibarger's</p>
+        <h1 id="introTitle" class="intro-title">Drive-in Portfolio</h1>
+        <button class="intro-start" id="introStart" disabled aria-describedby="introStatus">
+          <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="track" cx="60" cy="60" r="54" /><circle class="bar" id="introBar" cx="60" cy="60" r="54" /></svg>
+          <span class="intro-start-label" id="introLabel">Loading</span>
+        </button>
+        <p class="intro-status" id="introStatus" aria-live="polite">Warming up the 4Runner…</p>
+        <p class="intro-hint"><kbd>WASD</kbd> drive · <kbd>SHIFT</kbd> boost · <kbd>ENTER</kbd> open</p>
+      </div>
+    </div>
+
+    <!-- HUD -->
+    <header class="hud hud-brand">
+      <a href="/" class="brand" aria-label="Jace Drive home"><span class="brand-mark">J</span><span class="brand-text">Jace's<small>drive to explore</small></span></a>
+    </header>
+    <nav class="hud hud-buttons" aria-label="Game menu">
+      <button class="square-btn is-red" id="menuTrigger" aria-label="Open menu" aria-controls="menu" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <button class="square-btn" id="mapTrigger" aria-label="Open map"><svg viewBox="0 0 24 24"><path d="M12 21s-6-5.6-6-10a6 6 0 1 1 12 0c0 4.4-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/></svg></button>
+      <button class="square-btn" id="audioTrigger" aria-label="Toggle sound" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path class="wave" d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg></button>
+    </nav>
+
+    <div class="hud hud-progress" aria-live="polite"><span id="progressText">0 / 17 portals</span><div class="progress-bar"><i id="progressBar"></i></div></div>
+
+    <div class="hud speedo" aria-hidden="true"><strong id="speedValue">0</strong><span>mph</span><em id="boostTag">BOOST</em></div>
+
+    <div class="hud circuit-hud hidden" id="circuitHud" aria-live="polite">
+      <span class="circuit-label">Circuit</span><strong id="circuitTime">0.00</strong><small id="circuitNext">Checkpoint 1 / 8</small>
+    </div>
+
+    <button class="hud prompt hidden" id="prompt"><kbd>ENTER</kbd><span id="promptText">Open</span></button>
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+    <div class="bubbles" id="bubbles" aria-hidden="true"></div>
+
+    <!-- Touch -->
+    <div class="touch" id="touch" aria-hidden="true">
+      <div class="joystick" id="joystick"><div class="joystick-knob" id="joystickKnob"></div></div>
+      <div class="touch-buttons">
+        <button data-touch="boost">Boost</button>
+        <button data-touch="jump">Jump</button>
+        <button data-touch="interact" class="is-accent" id="touchInteract">Open</button>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <section class="modal menu" id="menu" aria-label="Menu" aria-hidden="true">
+      <div class="modal-inner">
+        <div class="modal-tabs" role="tablist" aria-label="Menu sections">
+          <button role="tab" data-tab="home" aria-label="Jace's home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9h-6v-6H9v6H3z"/></svg></button>
+          <button role="tab" data-tab="projects" aria-label="Projects"><svg viewBox="0 0 24 24"><path d="M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v6H4zM13 14h7v6h-7z"/></svg></button>
+          <button role="tab" data-tab="achievements" aria-label="Achievements"><svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="6"/><path d="M8 3l4 5 4-5"/></svg></button>
+          <button role="tab" data-tab="circuit" aria-label="Circuit"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/><path d="M12 4v5.5M12 14.5V20M4 12h5.5M14.5 12H20"/></svg></button>
+          <button role="tab" data-tab="whispers" aria-label="Visitor radio"><svg viewBox="0 0 24 24"><path d="M12 3c3 4 5 6 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-5 .5 2 1.5 3 3 3 0-3-1-5 0-8z"/></svg></button>
+          <button role="tab" data-tab="options" aria-label="Options"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/></svg></button>
+          <button role="tab" data-tab="controls" aria-label="Controls"><svg viewBox="0 0 24 24"><rect x="2.5" y="7" width="19" height="11" rx="5"/><path d="M7 10.5v4M5 12.5h4"/><circle cx="16" cy="11.5" r="1"/><circle cx="18" cy="13.5" r="1"/></svg></button>
+          <button role="tab" data-tab="behind" aria-label="Behind the scene"><svg viewBox="0 0 24 24"><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7v.5"/><circle cx="12" cy="17.5" r=".6"/></svg></button>
+          <button class="modal-close" data-close aria-label="Close menu"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+        <div class="modal-body">
+          <figure class="modal-preview"><img id="menuPreview" alt="" src="/assets/social-preview.png" width="1200" height="630" /></figure>
+          <div class="modal-content">
+
+            <article class="tab-panel" data-panel="home" id="about">
+              <h2 class="title">Jace's Home</h2>
+              <p>Welcome!</p>
+              <p>My name is <strong>Jace Nibarger</strong>. I'm an <strong>Assistant Service Drive Manager and Service Advisor</strong> at Hendrick Toyota Merriam in Kansas City, and a <strong>systems builder</strong> who ships practical AI and automotive tools.</p>
+              <p>I work best where people, revenue, and process meet. My style is direct: find the real constraint, make the workflow visible, use evidence instead of assumptions, and build something repeatable.</p>
+              <p>This is my portfolio. Drive the 4Runner around. <strong>Every glowing portal is a project</strong> and opens its real GitHub repo. The <strong>career road</strong> straight ahead from the spawn plaza shows what I've done in the service lane.</p>
+              <p>And please don't knock over my name.</p>
+              <ul class="facts">
+                <li><strong>$1M+</strong><span>customer-pay revenue since July 2025</span></li>
+                <li><strong>#2 / 17</strong><span>effective labor rate ranking</span></li>
+                <li><strong>40+</strong><span>CRM accounts migrated to HubSpot</span></li>
+              </ul>
+              <div class="actions">
+                <a class="btn is-primary" href="mailto:jnibarger01@gmail.com">Email Jace</a>
+                <a class="btn" href="https://github.com/jnibarger01" target="_blank" rel="noopener">GitHub ↗</a>
+                <a class="btn" href="https://www.linkedin.com/in/jace-nibarger-a7196211b" target="_blank" rel="noopener">LinkedIn ↗</a>
+              </div>
+              <p class="muted">Open to service leadership, operations, customer experience, AI implementation, and technical product roles, in the Kansas City area or remote.</p>
+            </article>
+
+            <section class="tab-panel" data-panel="projects" id="projects" aria-labelledby="projectsTitle">
+              <h2 class="title" id="projectsTitle">Project portals</h2>
+              <p>Seventeen destinations, one per public repository. Pick one to fast travel, or open the repo directly.</p>
+              <div class="project-groups" id="projectList">{{PROJECT_LIST}}</div>
+            </section>
+
+            <section class="tab-panel" data-panel="achievements">
+              <h2 class="title">Achievements</h2>
+              <p id="achievementSummary">0 unlocked</p>
+              <ul class="achievement-grid" id="achievementGrid"></ul>
+            </section>
+
+            <section class="tab-panel" data-panel="circuit">
+              <h2 class="title">The Ring Circuit</h2>
+              <p>Drive through the <strong>START · FINISH</strong> gate on the ring road, hit all 8 checkpoints in order, either direction, and cross the line again.</p>
+              <p class="best">Your best: <strong id="bestLap">none yet</strong></p>
+              <ol class="leaderboard" id="leaderboard"><li class="muted">Loading leaderboard…</li></ol>
+              <button class="btn is-primary" id="goToCircuit">Take me to the start line</button>
+            </section>
+
+            <section class="tab-panel" data-panel="whispers">
+              <h2 class="title">Visitor radio</h2>
+              <p>Leave a whisper. It floats in the world <strong>where your car is parked</strong>, so other drivers find it when they pass by. Press <kbd>T</kbd> while driving.</p>
+              <form id="whisperForm" class="whisper-form">
+                <label><span class="sr-only">Name</span><input id="whisperName" maxlength="20" placeholder="Your name (optional)" autocomplete="nickname" /></label>
+                <label><span class="sr-only">Message</span><input id="whisperMessage" maxlength="60" required placeholder="Message · 60 characters max" /></label>
+                <button class="btn is-primary" type="submit">Transmit here</button>
+              </form>
+              <p class="form-status" id="whisperStatus" aria-live="polite"></p>
+              <ul class="whisper-feed" id="whisperFeed"></ul>
+            </section>
+
+            <section class="tab-panel" data-panel="options">
+              <h2 class="title">Options</h2>
+              <table class="options">
+                <tbody>
+                  <tr><td>Audio</td><td><button class="toggle" id="optAudio" aria-pressed="true">On</button></td></tr>
+                  <tr><td>Quality</td><td><div class="segmented" id="optQuality"><button data-v="low">Low</button><button data-v="medium">Medium</button><button data-v="high">High</button></div></td></tr>
+                  <tr><td>Time of day</td><td><div class="segmented" id="optTime"><button data-v="auto">Auto</button><button data-v="dawn">Dawn</button><button data-v="day">Day</button><button data-v="sunset">Sunset</button><button data-v="night">Night</button></div></td></tr>
+                  <tr><td>Screen shake</td><td><button class="toggle" id="optShake" aria-pressed="true">On</button></td></tr>
+                  <tr><td>I'm stuck!</td><td><button class="btn" id="optRespawn">Respawn</button></td></tr>
+                  <tr><td>Reset</td><td><button class="btn" id="optResetObjects">Reset objects</button> <button class="btn is-danger" id="optResetProgress">Reset progress</button></td></tr>
+                  <tr><td>Renderer</td><td><span id="optRenderer" class="muted">WebGL2</span></td></tr>
+                  <tr><td>Server</td><td><span id="optServer" class="muted">Pending</span></td></tr>
+                </tbody>
+              </table>
+            </section>
+
+            <section class="tab-panel" data-panel="controls">
+              <h2 class="title">Controls</h2>
+              <table class="controls">
+                <tbody>
+                  <tr><td><kbd>WASD</kbd> or <kbd>ARROWS</kbd></td><td>Drive</td></tr>
+                  <tr><td><kbd>SHIFT</kbd></td><td>Boost</td></tr>
+                  <tr><td><kbd>B</kbd> or <kbd>CTRL</kbd></td><td>Brake</td></tr>
+                  <tr><td><kbd>SPACE</kbd></td><td>Jump</td></tr>
+                  <tr><td><kbd>ENTER</kbd></td><td>Interact / open portal</td></tr>
+                  <tr><td><kbd>M</kbd></td><td>Map</td></tr>
+                  <tr><td><kbd>T</kbd></td><td>Post a whisper</td></tr>
+                  <tr><td><kbd>H</kbd></td><td>Honk</td></tr>
+                  <tr><td><kbd>L</kbd></td><td>Mute</td></tr>
+                  <tr><td><kbd>R</kbd></td><td>Respawn</td></tr>
+                  <tr><td><kbd>DRAG</kbd> / <kbd>WHEEL</kbd></td><td>Orbit / zoom camera</td></tr>
+                  <tr><td><kbd>ONE FINGER</kbd></td><td>Joystick: drive toward that direction</td></tr>
+                  <tr><td><kbd>PINCH</kbd></td><td>Zoom (touch)</td></tr>
+                  <tr><td><kbd>GAMEPAD</kbd></td><td>RT/LT drive · stick steer · B boost · Y jump · A interact</td></tr>
+                </tbody>
+              </table>
+            </section>
+
+            <section class="tab-panel" data-panel="behind">
+              <h2 class="title">Behind the scene</h2>
+              <p>The world is built live in your browser with <strong>Three.js</strong>. The terrain is a 257×257 height field shared by the mesh, the physics, and a GPU grass shader. The grass is a wrapping patch of instanced blades that bend in the wind and around your tires. Trees are thousands of alpha-tested leaf cards, and the lake shader reads terrain depth for its shoreline foam.</p>
+              <p>The car is the actual <strong>2024 Toyota 4Runner TRD Pro</strong> GLB from Jace's Toyota Showroom project, Draco-compressed from 28 MiB to about 1.2 MiB.</p>
+              <p>Sound is synthesized with Web Audio. Whispers and circuit times are stored by the small Node server that also renders every page's SEO content.</p>
+              <p class="muted">Inspired by the interaction model of <a href="https://bruno-simon.com" target="_blank" rel="noopener">Bruno Simon's portfolio</a>. The code, models, world, and copy here are original. Fonts: Amatic SC and Nunito (OFL).</p>
+            </section>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Project / info modal -->
+    <section class="modal detail" id="detail" aria-hidden="true" aria-labelledby="detailTitle">
+      <div class="modal-inner">
+        <div class="modal-tabs">
+          <button class="square-btn" id="detailPrev" aria-label="Previous project"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <button class="square-btn" id="detailNext" aria-label="Next project"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+          <button class="modal-close" data-close aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+        <div class="modal-body">
+          <figure class="modal-preview"><img id="detailPreview" alt="" /><figcaption id="detailBadge"></figcaption></figure>
+          <article class="modal-content" id="detailContent">{{PROJECT_ARTICLE}}</article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Map -->
+    <section class="modal map" id="map" aria-hidden="true" aria-label="World map">
+      <div class="modal-inner">
+        <div class="modal-tabs"><span class="map-title">World map</span><button class="modal-close" data-close aria-label="Close map"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+        <div class="map-body"><canvas id="mapCanvas" width="900" height="900" aria-label="Top-down map. Select a portal to fast travel."></canvas><p class="muted">Select a portal to fast travel. Dots you have not visited yet pulse.</p></div>
+      </div>
+    </section>
+  </div>
+
+  <noscript><p class="noscript">This portfolio is a 3D driving game and needs JavaScript. Browse Jace's projects on <a href="https://github.com/jnibarger01">GitHub</a> or email <a href="mailto:jnibarger01@gmail.com">jnibarger01@gmail.com</a>.</p></noscript>
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>
